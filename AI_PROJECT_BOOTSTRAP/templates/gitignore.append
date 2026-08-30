@@ -1,0 +1,5 @@
+# Local conversation archives may contain sensitive content.
+archive/conversations/
+
+# Local bootstrap state may contain machine-specific paths.
+.ai-project-bootstrap.json

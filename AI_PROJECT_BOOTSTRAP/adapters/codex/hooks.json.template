@@ -1,0 +1,29 @@
+{
+  "description": "Zero-token local conversation archive for this project.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{HOOK_COMMAND_JSON}}",
+            "commandWindows": "{{HOOK_COMMAND_WINDOWS_JSON}}",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{HOOK_COMMAND_JSON}}",
+            "commandWindows": "{{HOOK_COMMAND_WINDOWS_JSON}}",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

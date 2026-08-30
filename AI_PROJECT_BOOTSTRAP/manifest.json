@@ -1,0 +1,21 @@
+{
+  "name": "AI_PROJECT_BOOTSTRAP",
+  "display_name": "通用 AI 项目启动器",
+  "version": "1.0.0",
+  "updated_at": "20260827-004024",
+  "files": [
+    {"source": "templates/AGENTS.md.template", "target": "AGENTS.md", "render": true, "policy": "managed"},
+    {"source": "templates/START_HERE.md.template", "target": "START_HERE.md", "render": true, "policy": "managed"},
+    {"source": "templates/AI_START_PROMPT.md.template", "target": "AI_START_PROMPT.md", "render": true, "policy": "managed"},
+    {"source": "templates/PROJECT_INDEX.md.template", "target": "PROJECT_INDEX.md", "render": true, "policy": "state"},
+    {"source": "templates/DEVELOPMENT_MAP.md.template", "target": "DEVELOPMENT_MAP.md", "render": true, "policy": "state"},
+    {"source": "templates/CODE_MAP.md.template", "target": "CODE_MAP.md", "render": true, "policy": "state"},
+    {"source": "templates/conversation-index.md.template", "target": "archive/conversations/INDEX.md", "render": true, "policy": "state"},
+    {"source": "adapters/codex/hooks.json.template", "target": ".codex/hooks.json", "render": true, "policy": "managed"},
+    {"source": "adapters/codex/archive-conversation.ps1", "target": ".codex/hooks/archive-conversation.ps1", "render": false, "policy": "managed"},
+    {"source": "adapters/codex/archive_conversation.py", "target": ".codex/hooks/archive_conversation.py", "render": false, "policy": "managed"},
+    {"source": "adapters/generic/record-conversation.ps1", "target": "tools/record-conversation.ps1", "render": false, "policy": "managed"},
+    {"source": "adapters/generic/record_conversation.py", "target": "tools/record_conversation.py", "render": false, "policy": "managed"},
+    {"source": "templates/gitignore.append", "target": ".gitignore", "render": false, "policy": "append"}
+  ]
+}

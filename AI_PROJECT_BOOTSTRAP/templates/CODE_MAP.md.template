@@ -1,0 +1,33 @@
+# 代码地图
+
+更新时间：`{{TIMESTAMP}}`
+
+## 代码状态
+
+- 项目已有初始化器生成的规则、上下文和对话归档基础设施。
+- 尚无业务源代码、依赖、构建或业务测试文件。
+
+## 基础文件
+
+- AGENTS.md：唯一规则源。
+- START_HERE.md：任意AI的项目入口。
+- AI_START_PROMPT.md：无法自动发现规则时使用的启动提示。
+- PROJECT_INDEX.md：分层上下文索引。
+- DEVELOPMENT_MAP.md：当前开发状态。
+- CODE_MAP.md：当前代码结构。
+- .codex/hooks.json：Codex 生命周期钩子配置。
+- .codex/hooks/archive-conversation.ps1：Windows/PowerShell 对话归档实现。
+- .codex/hooks/archive_conversation.py：跨平台/Python 对话归档实现。
+- tools/record-conversation.ps1：通用 PowerShell 手动记录入口。
+- tools/record_conversation.py：通用 Python 手动记录入口。
+- archive/conversations/INDEX.md：对话归档索引。
+
+## 程序结构
+
+- Codex：`UserPromptSubmit` 暂存用户消息，`Stop` 配对AI回答并写入归档。
+- 其他AI：支持本地命令时调用通用记录工具；不支持本地命令时人工保存。
+- 对话文件：`archive/conversations/YYYYMMDD-HHMMSS_核心内容.md`。
+
+## 待映射内容
+
+- 产生业务代码后补充业务入口、模块关系、调用链、数据流以及构建、运行和测试方式。

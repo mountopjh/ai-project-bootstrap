@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary & Log files
+*.tmp
+*.log
+.pending/
+.state/
+.errors/
+.index.lock
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE & Editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test temporary directories
+AI_PROJECT_BOOTSTRAP_TEST_*
