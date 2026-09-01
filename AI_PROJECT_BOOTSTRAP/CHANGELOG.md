@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-09-01
+
+### 修复
+
+- `tools/record-conversation.ps1` 在 `Set-StrictMode` 下访问缺失的 `session_id`/`turn_id`/`model`/`user`/`assistant` 属性会直接崩溃，导致不提供这些字段的调用方（如 Kiro IDE 的 `agentStop` hook）无法归档对话。改为通过 `PSObject.Properties` 安全读取，行为与 Python 版本（`record_conversation.py`，本身已用 `dict.get()`）保持一致。
+- 新增 PowerShell 与 Python 回归测试，覆盖"仅提供 user/assistant/model，不提供 session_id/turn_id"的最小请求场景。
+
 ## [1.1.0] - 2026-09-01
 
 ### 新增

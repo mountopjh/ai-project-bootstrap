@@ -138,6 +138,27 @@ try {
     if ($archiveText -notlike '*验证通用记录工具*' -or $archiveText -notlike '*记录成功*') {
         throw '对话正文缺少测试内容'
     }
+
+    $minimalPayload = [ordered]@{
+        user = '缺少会话标识的最小请求'
+        assistant = '仍应成功归档'
+        model = 'kiro'
+    } | ConvertTo-Json -Compress
+    $minimalResult = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $recorder, '-ProjectRootOverride', $TestRoot) -InputText $minimalPayload
+    if ($minimalResult.ExitCode -ne 0) {
+        throw "缺少 session_id/turn_id 时记录工具失败：$($minimalResult.ErrorOutput)"
+    }
+    $minimalConversations = @(
+        Get-ChildItem -LiteralPath (Join-Path $TestRoot 'archive/conversations') -Filter '*.md' |
+            Where-Object { $_.Name -ne 'INDEX.md' -and $_.Name -notin $conversations.Name }
+    )
+    if ($minimalConversations.Count -ne 1) {
+        throw '缺少 session_id/turn_id 的对话未被归档'
+    }
+    $minimalText = [IO.File]::ReadAllText($minimalConversations[0].FullName)
+    if ($minimalText -notlike '*缺少会话标识的最小请求*' -or $minimalText -notlike '*仍应成功归档*') {
+        throw '最小请求的对话正文缺少测试内容'
+    }
     'POWERSHELL_TESTS_OK'
 }
 finally {

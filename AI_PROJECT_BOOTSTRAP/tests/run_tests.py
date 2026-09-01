@@ -95,6 +95,30 @@ def main() -> int:
         assert re.fullmatch(r"\d{8}-\d{6}_.+\.md", conversations[0].name)
         archived = conversations[0].read_text(encoding="utf-8")
         assert payload["user"] in archived and payload["assistant"] in archived
+
+        minimal_payload = {
+            "user": "缺少会话标识的最小请求",
+            "assistant": "仍应成功归档",
+            "model": "kiro",
+        }
+        minimal_process = subprocess.run(
+            [sys.executable, str(recorder), "--project-root", str(target)],
+            input=json.dumps(minimal_payload, ensure_ascii=False),
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        if minimal_process.returncode:
+            raise AssertionError(minimal_process.stderr)
+        minimal_conversations = [
+            path
+            for path in (target / "archive/conversations").glob("*.md")
+            if path.name != "INDEX.md" and path.name not in {c.name for c in conversations}
+        ]
+        assert len(minimal_conversations) == 1
+        minimal_archived = minimal_conversations[0].read_text(encoding="utf-8")
+        assert minimal_payload["user"] in minimal_archived
+        assert minimal_payload["assistant"] in minimal_archived
         print("PYTHON_TESTS_OK")
         return 0
     finally:
