@@ -26,9 +26,24 @@ if (-not [System.IO.File]::Exists($recordHookPath)) {
     throw '未找到项目对话归档器。'
 }
 
-$recordSessionId = if ($null -ne $recordInput.session_id -and -not [string]::IsNullOrWhiteSpace([string]$recordInput.session_id)) { [string]$recordInput.session_id } else { 'generic-' + [guid]::NewGuid().ToString('N') }
-$recordTurnId = if ($null -ne $recordInput.turn_id -and -not [string]::IsNullOrWhiteSpace([string]$recordInput.turn_id)) { [string]$recordInput.turn_id } else { 'turn-' + [guid]::NewGuid().ToString('N') }
-$recordModel = if ($null -ne $recordInput.model) { [string]$recordInput.model } else { 'generic-ai' }
+function Get-RecordInputValue {
+    param(
+        [Parameter(Mandatory = $true)]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property -or $null -eq $property.Value) {
+        return $null
+    }
+    return [string]$property.Value
+}
+
+$recordRawSessionId = Get-RecordInputValue -InputObject $recordInput -Name 'session_id'
+$recordSessionId = if (-not [string]::IsNullOrWhiteSpace($recordRawSessionId)) { $recordRawSessionId } else { 'generic-' + [guid]::NewGuid().ToString('N') }
+$recordRawTurnId = Get-RecordInputValue -InputObject $recordInput -Name 'turn_id'
+$recordTurnId = if (-not [string]::IsNullOrWhiteSpace($recordRawTurnId)) { $recordRawTurnId } else { 'turn-' + [guid]::NewGuid().ToString('N') }
+$recordRawModel = Get-RecordInputValue -InputObject $recordInput -Name 'model'
+$recordModel = if (-not [string]::IsNullOrWhiteSpace($recordRawModel)) { $recordRawModel } else { 'generic-ai' }
 $recordPromptEvent = [ordered]@{
     session_id = $recordSessionId
     turn_id = $recordTurnId
@@ -36,7 +51,7 @@ $recordPromptEvent = [ordered]@{
     hook_event_name = 'UserPromptSubmit'
     model = $recordModel
     permission_mode = 'default'
-    prompt = [string]$recordInput.user
+    prompt = [string](Get-RecordInputValue -InputObject $recordInput -Name 'user')
 } | ConvertTo-Json -Compress
 $recordStopEvent = [ordered]@{
     session_id = $recordSessionId
@@ -46,7 +61,7 @@ $recordStopEvent = [ordered]@{
     model = $recordModel
     permission_mode = 'default'
     stop_hook_active = $false
-    last_assistant_message = [string]$recordInput.assistant
+    last_assistant_message = [string](Get-RecordInputValue -InputObject $recordInput -Name 'assistant')
 } | ConvertTo-Json -Compress
 
 $recordPwsh = Get-Command pwsh -ErrorAction SilentlyContinue
