@@ -80,6 +80,22 @@ try {
         throw 'repair 未补齐文件'
     }
 
+    [IO.File]::Delete((Join-Path $TestRoot '.ai-project-bootstrap.json'))
+    $staleHookMarker = 'C:\stale-machine\wrong-project\archive-conversation.ps1'
+    [IO.File]::WriteAllText((Join-Path $TestRoot '.codex/hooks.json'), $staleHookMarker)
+    $localRepair = Invoke-TestBootstrap -Mode 'repair'
+    if ('.codex/hooks.json' -notin $localRepair.changed) {
+        throw 'repair 未重新生成本机 hooks 配置'
+    }
+    $repairedHook = [IO.File]::ReadAllText((Join-Path $TestRoot '.codex/hooks.json'))
+    if ($repairedHook -like "*$staleHookMarker*") {
+        throw 'repair 后 hooks 配置仍包含旧机器路径'
+    }
+    $localCheck = Invoke-TestBootstrap -Mode 'check'
+    if (-not $localCheck.ok -or @($localCheck.issues) -like '*未指向当前项目*') {
+        throw 'repair 后 check 仍报告 hooks 未指向当前项目'
+    }
+
     $stateMarker = [Environment]::NewLine + '测试状态必须保留。' + [Environment]::NewLine
     $managedMarker = [Environment]::NewLine + '测试人工修改。' + [Environment]::NewLine
     [IO.File]::AppendAllText((Join-Path $TestRoot 'DEVELOPMENT_MAP.md'), $stateMarker)

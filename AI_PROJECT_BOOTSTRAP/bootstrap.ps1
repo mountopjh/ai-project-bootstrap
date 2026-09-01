@@ -11,6 +11,10 @@ param(
 )
 
 Set-StrictMode -Version Latest
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Error "AI_PROJECT_BOOTSTRAP 需要 PowerShell 7 或以上版本（当前：$($PSVersionTable.PSVersion)）。请使用 pwsh 运行本脚本。"
+    exit 1
+}
 $ErrorActionPreference = 'Stop'
 $BootstrapRoot = $PSScriptRoot
 $MetadataName = '.ai-project-bootstrap.json'
@@ -324,6 +328,14 @@ function Invoke-Repair {
                 $changed.Add($entry.target)
             }
         }
+        elseif ($entry.policy -eq 'local') {
+            $expected = Get-ByteHash -Bytes $bytes
+            $actual = if (Test-Path -LiteralPath $path) { Get-PathHash -Path $path } else { $null }
+            if ($actual -ne $expected) {
+                Write-AtomicBytes -Path $path -Bytes $bytes
+                $changed.Add($entry.target)
+            }
+        }
         elseif (-not (Test-Path -LiteralPath $path)) {
             Write-AtomicBytes -Path $path -Bytes $bytes
             $changed.Add($entry.target)
@@ -413,6 +425,14 @@ function Invoke-Upgrade {
         }
         elseif ($entry.policy -eq 'append' -and (Add-RequiredLines -Path $path -Bytes $bytes)) {
             $changed.Add($entry.target)
+        }
+        elseif ($entry.policy -eq 'local') {
+            $expected = Get-ByteHash -Bytes $bytes
+            $actual = if (Test-Path -LiteralPath $path) { Get-PathHash -Path $path } else { $null }
+            if ($actual -ne $expected) {
+                Write-AtomicBytes -Path $path -Bytes $bytes
+                $changed.Add($entry.target)
+            }
         }
     }
     $installed = if ($metadata.installed_at) { [string]$metadata.installed_at } else { $stamp }

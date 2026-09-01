@@ -3,3 +3,6 @@ archive/conversations/
 
 # Local bootstrap state may contain machine-specific paths.
 .ai-project-bootstrap.json
+
+# Codex hook wiring embeds machine-specific paths; regenerate locally via repair/upgrade.
+.codex/hooks.json
