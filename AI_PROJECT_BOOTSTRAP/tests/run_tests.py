@@ -42,6 +42,18 @@ def main() -> int:
         repaired = run("repair", "--target", str(target))
         assert "START_HERE.md" in repaired["changed"]
 
+        (target / ".ai-project-bootstrap.json").unlink()
+        stale_hook_marker = r"C:\stale-machine\wrong-project\archive-conversation.py"
+        (target / ".codex/hooks.json").write_text(stale_hook_marker, encoding="utf-8")
+        local_repair = run("repair", "--target", str(target))
+        assert ".codex/hooks.json" in local_repair["changed"]
+        repaired_hook = (target / ".codex/hooks.json").read_text(encoding="utf-8")
+        assert stale_hook_marker not in repaired_hook
+        local_check = run("check", "--target", str(target))
+        assert local_check["ok"] and not any(
+            "未指向当前项目" in issue for issue in local_check["issues"]
+        )
+
         state_marker = "\n测试状态必须保留。\n"
         managed_marker = "\n测试人工修改。\n"
         with (target / "DEVELOPMENT_MAP.md").open("a", encoding="utf-8") as stream:

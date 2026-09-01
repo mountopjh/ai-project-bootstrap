@@ -215,6 +215,11 @@ def repair(target: Path, data: dict[str, Any]) -> dict[str, Any]:
         if entry["policy"] == "append":
             if append_required(path, raw):
                 changed.append(entry["target"])
+        elif entry["policy"] == "local":
+            actual = file_digest(path) if path.is_file() else None
+            if actual != digest(raw):
+                atomic_write(path, raw)
+                changed.append(entry["target"])
         elif not path.exists():
             atomic_write(path, raw)
             changed.append(entry["target"])
@@ -281,6 +286,11 @@ def upgrade(target: Path, data: dict[str, Any], force: bool) -> dict[str, Any]:
             changed.append(entry["target"])
         elif entry["policy"] == "append" and append_required(path, raw):
             changed.append(entry["target"])
+        elif entry["policy"] == "local":
+            actual = file_digest(path) if path.is_file() else None
+            if actual != digest(raw):
+                atomic_write(path, raw)
+                changed.append(entry["target"])
     installed = previous.get("installed_at", stamp)
     write_meta(target, data, installed, stamp, current_hashes(target, data))
     result: dict[str, Any] = {

@@ -21,11 +21,15 @@ python AI_PROJECT_BOOTSTRAP/bootstrap.py init --target "目标项目目录"
 - `init`：只初始化没有冲突的新项目。
 - `check`：只读检查完整性、路径、模板变量和时间格式。
 - `upgrade`：升级受管理文件；检测到人工修改时停止，使用明确的强制选项才会先备份再覆盖。
-- `repair`：只补齐缺失文件，不覆盖已有文件。
+- `repair`：补齐缺失文件，并重新生成当前机器专用的本地文件；不覆盖其他已有文件。
 
 PowerShell 强制升级参数为 `-Force`；Python 为 `--force`。备份目录使用 `archive/bootstrap/YYYYMMDD-HHMMSS/`。
 
-`upgrade` 只替换由初始化器管理的规则、入口和工具文件；开发地图、代码地图、项目索引与对话索引属于项目状态，不会被覆盖。`repair` 也只补缺失内容。
+`upgrade` 只替换由初始化器管理的规则、入口和工具文件；开发地图、代码地图、项目索引与对话索引属于项目状态，不会被覆盖。`repair` 也只补缺失内容及重新生成本地文件。
+
+### 本机 Codex 钩子
+
+`.codex/hooks.json` 包含当前机器和项目路径，不应提交到 Git。新项目首次使用时运行 `init` 生成；已有项目 clone 到新机器或移动路径后，运行一次 `repair` 重新生成本机可用的钩子配置，也可在已有本地登记信息时通过 `upgrade` 更新。
 
 ## 自检
 
@@ -48,6 +52,8 @@ python AI_PROJECT_BOOTSTRAP/tests/run_tests.py
 - 不能读取文件或执行本地命令的AI无法自动保存对话，只能人工调用记录工具。
 
 规则只存在于 `AGENTS.md`；其他入口只负责指向它，避免多份规则失效或冲突。
+
+当前授权口令尚未配置化；修改“执行任务”口令时，需要同步修改 `templates/AGENTS.md.template`、`adapters/codex/archive-conversation.ps1` 和 `adapters/codex/archive_conversation.py`。
 
 ## Token 使用
 
