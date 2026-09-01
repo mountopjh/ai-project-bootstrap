@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run PowerShell tests
+        shell: pwsh
+        run: pwsh -File AI_PROJECT_BOOTSTRAP/tests/run-tests.ps1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Python tests
+        run: python AI_PROJECT_BOOTSTRAP/tests/run_tests.py
