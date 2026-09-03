@@ -24,3 +24,9 @@ Desktop.ini
 
 # Test temporary directories
 AI_PROJECT_BOOTSTRAP_TEST_*
+# Local conversation archives may contain sensitive content.
+archive/conversations/
+# Local bootstrap state may contain machine-specific paths.
+.ai-project-bootstrap.json
+# Codex hook wiring embeds machine-specific paths; regenerate locally via repair/upgrade.
+.codex/hooks.json

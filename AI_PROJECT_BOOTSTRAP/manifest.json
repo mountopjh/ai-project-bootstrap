@@ -1,8 +1,8 @@
 {
   "name": "AI_PROJECT_BOOTSTRAP",
   "display_name": "通用 AI 项目启动器",
-  "version": "1.1.1",
-  "updated_at": "20260901-222000",
+  "version": "1.2.0",
+  "updated_at": "20260903-122056",
   "files": [
     {"source": "templates/AGENTS.md.template", "target": "AGENTS.md", "render": true, "policy": "managed"},
     {"source": "templates/START_HERE.md.template", "target": "START_HERE.md", "render": true, "policy": "managed"},
