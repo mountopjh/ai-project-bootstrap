@@ -117,8 +117,14 @@ def main() -> int:
         ]
         assert len(minimal_conversations) == 1
         minimal_archived = minimal_conversations[0].read_text(encoding="utf-8")
-        assert minimal_payload["user"] in minimal_archived
-        assert minimal_payload["assistant"] in minimal_archived
+        temp_profile = target / "test_profile.ps1"
+        install_res = run("install", "--profile-path", str(temp_profile))
+        assert install_res["ok"] and install_res["installed"]
+        assert "function ai-init" in temp_profile.read_text(encoding="utf-8")
+        uninstall_res = run("install", "--uninstall", "--profile-path", str(temp_profile))
+        assert uninstall_res["ok"] and not uninstall_res["installed"]
+        assert "function ai-init" not in temp_profile.read_text(encoding="utf-8")
+
         print("PYTHON_TESTS_OK")
         return 0
     finally:

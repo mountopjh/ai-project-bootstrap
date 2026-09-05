@@ -397,11 +397,137 @@ def check(target: Path, data: dict[str, Any]) -> dict[str, Any]:
     return {"action": "check", "ok": not issues, "target": str(target), "issues": issues}
 
 
+def get_profile_path(override: str = "") -> Path:
+    if override.strip():
+        return Path(override).expanduser().resolve()
+    if sys.platform == "win32":
+        personal = Path(os.environ.get("USERPROFILE", Path.home())) / "Documents" / "PowerShell"
+        return personal / "Microsoft.PowerShell_profile.ps1"
+    return Path.home() / ".bashrc"
+
+
+def install_global(uninstall: bool = False, profile_override: str = "") -> dict[str, Any]:
+    profile_file = get_profile_path(profile_override)
+    start_marker = "# >>> AI_PROJECT_BOOTSTRAP >>>"
+    end_marker = "# <<< AI_PROJECT_BOOTSTRAP <<<"
+
+    bootstrap_ps1 = (ROOT / "bootstrap.ps1").resolve().as_posix()
+    home_bootstrap = (Path.home() / ".ai-project-bootstrap/AI_PROJECT_BOOTSTRAP/bootstrap.ps1").as_posix()
+
+    block_lines = [
+        start_marker,
+        "function ai-init {",
+        '    param([string]$Path = ".", [switch]$Force)',
+        "    $target = (Resolve-Path $Path).Path",
+        f'    $boot = if (Test-Path "{home_bootstrap}") {{ "{home_bootstrap}" }} else {{ "{bootstrap_ps1}" }}',
+        "    if (-not (Test-Path $boot)) {",
+        '        Write-Error "AI_PROJECT_BOOTSTRAP 未找到，请确保已安装至 $HOME/.ai-project-bootstrap 或正确路径。"',
+        "        return",
+        "    }",
+        '    $params = @("init", "-TargetPath", $target)',
+        '    if ($Force) { $params += "-Force" }',
+        "    pwsh -NoProfile -File $boot @params",
+        "}",
+        "",
+        "function ai-repair {",
+        '    param([string]$Path = ".", [switch]$Force)',
+        "    $target = (Resolve-Path $Path).Path",
+        f'    $boot = if (Test-Path "{home_bootstrap}") {{ "{home_bootstrap}" }} else {{ "{bootstrap_ps1}" }}',
+        "    if (-not (Test-Path $boot)) {",
+        '        Write-Error "AI_PROJECT_BOOTSTRAP 未找到，请确保已安装至 $HOME/.ai-project-bootstrap 或正确路径。"',
+        "        return",
+        "    }",
+        '    $params = @("repair", "-TargetPath", $target)',
+        '    if ($Force) { $params += "-Force" }',
+        "    pwsh -NoProfile -File $boot @params",
+        "}",
+        "",
+        "function ai-check {",
+        '    param([string]$Path = ".")',
+        "    $target = (Resolve-Path $Path).Path",
+        f'    $boot = if (Test-Path "{home_bootstrap}") {{ "{home_bootstrap}" }} else {{ "{bootstrap_ps1}" }}',
+        "    if (-not (Test-Path $boot)) {",
+        '        Write-Error "AI_PROJECT_BOOTSTRAP 未找到，请确保已安装至 $HOME/.ai-project-bootstrap 或正确路径。"',
+        "        return",
+        "    }",
+        "    pwsh -NoProfile -File $boot check -TargetPath $target",
+        "}",
+        "",
+        "function ai-upgrade {",
+        '    param([string]$Path = ".", [switch]$Force)',
+        "    $target = (Resolve-Path $Path).Path",
+        f'    $boot = if (Test-Path "{home_bootstrap}") {{ "{home_bootstrap}" }} else {{ "{bootstrap_ps1}" }}',
+        "    if (-not (Test-Path $boot)) {",
+        '        Write-Error "AI_PROJECT_BOOTSTRAP 未找到，请确保已安装至 $HOME/.ai-project-bootstrap 或正确路径。"',
+        "        return",
+        "    }",
+        '    $params = @("upgrade", "-TargetPath", $target)',
+        '    if ($Force) { $params += "-Force" }',
+        "    pwsh -NoProfile -File $boot @params",
+        "}",
+        end_marker,
+    ]
+    block_content = "\n".join(block_lines)
+
+    profile_file.parent.mkdir(parents=True, exist_ok=True)
+    current_text = profile_file.read_text(encoding="utf-8") if profile_file.is_file() else ""
+    pattern = re.compile(re.escape(start_marker) + r"[\s\S]*?" + re.escape(end_marker))
+
+    if uninstall:
+        updated_text = pattern.sub("", current_text).strip()
+        if updated_text:
+            updated_text += "\n"
+        profile_file.write_text(updated_text, encoding="utf-8")
+        return {
+            "action": "install",
+            "ok": True,
+            "profile": str(profile_file),
+            "installed": False,
+            "message": "已从 Profile 移除 AI_PROJECT_BOOTSTRAP 全局函数。",
+        }
+
+    if pattern.search(current_text):
+        updated_text = pattern.sub(block_content, current_text)
+    else:
+        trimmed = current_text.strip()
+        updated_text = f"{trimmed}\n\n{block_content}\n" if trimmed else f"{block_content}\n"
+
+    profile_file.write_text(updated_text, encoding="utf-8")
+
+    global_dir = Path.home() / ".ai-project-bootstrap"
+    repo_root = ROOT.parent
+    copied = False
+    if repo_root.resolve() != global_dir.resolve() and (repo_root / "AI_PROJECT_BOOTSTRAP").is_dir():
+        try:
+            global_dir.mkdir(parents=True, exist_ok=True)
+            dest_bootstrap = global_dir / "AI_PROJECT_BOOTSTRAP"
+            if not dest_bootstrap.exists():
+                shutil.copytree(repo_root / "AI_PROJECT_BOOTSTRAP", dest_bootstrap)
+                copied = True
+            for root_file in ("README.md", "LICENSE", ".gitignore", "install.ps1", "install.py"):
+                src = repo_root / root_file
+                if src.is_file():
+                    shutil.copy2(src, global_dir / root_file)
+        except OSError:
+            pass
+
+    return {
+        "action": "install",
+        "ok": True,
+        "profile": str(profile_file),
+        "installed": True,
+        "synced_to_home": copied,
+        "functions": ["ai-init", "ai-repair", "ai-check", "ai-upgrade"],
+    }
+
+
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="通用 AI 项目启动器")
-    parser.add_argument("action", choices=("init", "check", "upgrade", "repair"))
-    parser.add_argument("--target", required=True, help="目标项目目录")
+    parser.add_argument("action", choices=("init", "check", "upgrade", "repair", "install"))
+    parser.add_argument("--target", default=".", help="目标项目目录（默认为当前目录）")
     parser.add_argument("--force", action="store_true", help="备份并覆盖人工修改的受管理文件")
+    parser.add_argument("--uninstall", action="store_true", help="卸载全局命令配置")
+    parser.add_argument("--profile-path", default="", help="自定义 profile 路径（供测试或特殊场景使用）")
     return parser.parse_args()
 
 
@@ -419,6 +545,8 @@ def main() -> int:
             result = check(target, data)
         elif args.action == "repair":
             result = repair(target, data)
+        elif args.action == "install":
+            result = install_global(args.uninstall, args.profile_path)
         else:
             result = upgrade(target, data, args.force)
         print(json.dumps(result, ensure_ascii=False, indent=2))

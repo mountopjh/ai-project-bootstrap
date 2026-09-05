@@ -4,6 +4,18 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-09-05
+
+### 新增
+
+- 增加全局常驻脚手架与一键安装配置：新增根目录 `install.ps1` 与 `install.py`，并在 `bootstrap.ps1` 与 `bootstrap.py` 中增加 `install` 模式。自动适配 `$HOME/.ai-project-bootstrap`，并在用户 PowerShell `$PROFILE` 中幂等注入 `ai-init`、`ai-repair`、`ai-check`、`ai-upgrade` 全局快捷函数，支持一键卸载（`-Uninstall`）。
+- `bootstrap.ps1` 与 `bootstrap.py` 将目标路径参数设为可选并默认指向当前目录（`.`），无需手动拼接或传递目标路径。
+- 新增全局安装、卸载与默认目标路径的自动化测试用例。
+
+### 变更
+
+- 完善快速开始文档，首推全局快捷命令作为第一使用姿势，彻底解决不同项目路径不一致、换机换盘及每次新建项目需临时 clone 仓库的问题。
+
 ## [1.2.0] - 2026-09-03
 
 ### 新增

@@ -4,16 +4,28 @@
 
 ## 快速使用
 
+### 全局一键命令（推荐）
+
+在仓库根目录下运行一次 `pwsh -File .\install.ps1`（或 `python install.py`），即可在终端任何项目路径直接使用：
+- `ai-init`：在当前目录初始化新项目。
+- `ai-repair`：在当前目录无损补齐缺失模板并重新生成本机 `.codex/hooks.json`。
+- `ai-check`：检查当前项目完整性。
+- `ai-upgrade -Force`：强制升级受管理模板（自动备份历史修改）。
+
+### 脚本直接调用
+
 Windows PowerShell 7：
 
 ```powershell
-.\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 init -TargetPath "目标项目目录"
+# 目标路径参数 -TargetPath 默认为当前目录（.），可省略
+.\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 init
 ```
 
 Python 标准库版本：
 
 ```text
-python AI_PROJECT_BOOTSTRAP/bootstrap.py init --target "目标项目目录"
+# 目标路径参数 --target 默认为当前目录（.），可省略
+python AI_PROJECT_BOOTSTRAP/bootstrap.py init
 ```
 
 支持模式：
@@ -22,6 +34,7 @@ python AI_PROJECT_BOOTSTRAP/bootstrap.py init --target "目标项目目录"
 - `check`：只读检查完整性、路径、模板变量和时间格式。
 - `upgrade`：升级受管理文件；检测到人工修改时停止，使用明确的强制选项才会先备份再覆盖。
 - `repair`：补齐缺失文件，并重新生成当前机器专用的本地文件；不覆盖其他已有文件。
+- `install`：全局注册 `ai-init` / `ai-repair` / `ai-check` / `ai-upgrade` 快捷命令至 PowerShell `$PROFILE` 并同步脚手架至 `$HOME/.ai-project-bootstrap`。
 
 PowerShell 强制升级参数为 `-Force`；Python 为 `--force`。备份目录使用 `archive/bootstrap/YYYYMMDD-HHMMSS/`。
 

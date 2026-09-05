@@ -1,13 +1,17 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('init', 'check', 'upgrade', 'repair')]
+    [ValidateSet('init', 'check', 'upgrade', 'repair', 'install')]
     [string]$Action,
 
-    [Parameter(Mandatory)]
-    [string]$TargetPath,
+    [Parameter(Position = 1)]
+    [string]$TargetPath = '.',
 
-    [switch]$Force
+    [switch]$Force,
+
+    [switch]$Uninstall,
+
+    [string]$ProfilePath = ''
 )
 
 Set-StrictMode -Version Latest
@@ -568,6 +572,145 @@ function Invoke-Check {
     return [ordered]@{ action = 'check'; ok = ($issues.Count -eq 0); target = $TargetRoot; issues = $issues }
 }
 
+function Get-ProfilePath {
+    param([string]$OverridePath)
+    if (-not [string]::IsNullOrWhiteSpace($OverridePath)) {
+        return [IO.Path]::GetFullPath($OverridePath)
+    }
+    if ($PROFILE) {
+        return $PROFILE
+    }
+    $personal = [Environment]::GetFolderPath('MyDocuments')
+    return (Join-Path (Join-Path $personal 'PowerShell') 'Microsoft.PowerShell_profile.ps1')
+}
+
+function Invoke-Install {
+    param(
+        [string]$BootstrapRoot,
+        [bool]$UninstallAction,
+        [string]$CustomProfilePath
+    )
+    $profileFile = Get-ProfilePath -OverridePath $CustomProfilePath
+    $startMarker = '# >>> AI_PROJECT_BOOTSTRAP >>>'
+    $endMarker = '# <<< AI_PROJECT_BOOTSTRAP <<<'
+    $blockContent = @'
+# >>> AI_PROJECT_BOOTSTRAP >>>
+function ai-init {
+    param([string]$Path = ".", [switch]$Force)
+    $target = (Resolve-Path $Path).Path
+    $boot = Join-Path $HOME ".ai-project-bootstrap\AI_PROJECT_BOOTSTRAP\bootstrap.ps1"
+    if (-not (Test-Path $boot)) {
+        Write-Error "AI_PROJECT_BOOTSTRAP 未找到: $boot"
+        return
+    }
+    $params = @("init", "-TargetPath", $target)
+    if ($Force) { $params += "-Force" }
+    pwsh -NoProfile -File $boot @params
+}
+
+function ai-repair {
+    param([string]$Path = ".", [switch]$Force)
+    $target = (Resolve-Path $Path).Path
+    $boot = Join-Path $HOME ".ai-project-bootstrap\AI_PROJECT_BOOTSTRAP\bootstrap.ps1"
+    if (-not (Test-Path $boot)) {
+        Write-Error "AI_PROJECT_BOOTSTRAP 未找到: $boot"
+        return
+    }
+    $params = @("repair", "-TargetPath", $target)
+    if ($Force) { $params += "-Force" }
+    pwsh -NoProfile -File $boot @params
+}
+
+function ai-check {
+    param([string]$Path = ".")
+    $target = (Resolve-Path $Path).Path
+    $boot = Join-Path $HOME ".ai-project-bootstrap\AI_PROJECT_BOOTSTRAP\bootstrap.ps1"
+    if (-not (Test-Path $boot)) {
+        Write-Error "AI_PROJECT_BOOTSTRAP 未找到: $boot"
+        return
+    }
+    pwsh -NoProfile -File $boot check -TargetPath $target
+}
+
+function ai-upgrade {
+    param([string]$Path = ".", [switch]$Force)
+    $target = (Resolve-Path $Path).Path
+    $boot = Join-Path $HOME ".ai-project-bootstrap\AI_PROJECT_BOOTSTRAP\bootstrap.ps1"
+    if (-not (Test-Path $boot)) {
+        Write-Error "AI_PROJECT_BOOTSTRAP 未找到: $boot"
+        return
+    }
+    $params = @("upgrade", "-TargetPath", $target)
+    if ($Force) { $params += "-Force" }
+    pwsh -NoProfile -File $boot @params
+}
+# <<< AI_PROJECT_BOOTSTRAP <<<
+'@
+
+    $parent = Split-Path -Parent $profileFile
+    if (-not [string]::IsNullOrWhiteSpace($parent) -and -not (Test-Path $parent)) {
+        [IO.Directory]::CreateDirectory($parent) | Out-Null
+    }
+
+    $currentText = if (Test-Path $profileFile) { Read-Utf8Text -Path $profileFile } else { '' }
+    $pattern = [regex]::Escape($startMarker) + '[\s\S]*?' + [regex]::Escape($endMarker)
+
+    if ($UninstallAction) {
+        $updatedText = [regex]::Replace($currentText, $pattern, '').Trim()
+        if ($updatedText) { $updatedText += "`n" }
+        Write-AtomicText -Path $profileFile -Text $updatedText
+        return [ordered]@{
+            action = 'install'
+            ok = $true
+            profile = $profileFile
+            installed = $false
+            message = '已从 Profile 移除 AI_PROJECT_BOOTSTRAP 全局函数。'
+        }
+    }
+
+    if ([regex]::IsMatch($currentText, $pattern)) {
+        $updatedText = [regex]::Replace($currentText, $pattern, $blockContent)
+    }
+    else {
+        $trimmed = $currentText.Trim()
+        $updatedText = if ($trimmed) { $trimmed + "`n`n" + $blockContent + "`n" } else { $blockContent + "`n" }
+    }
+
+    Write-AtomicText -Path $profileFile -Text $updatedText
+
+    $globalDir = Join-Path $HOME '.ai-project-bootstrap'
+    $repoRoot = Split-Path -Parent $BootstrapRoot
+    $copied = $false
+    if ($repoRoot -ne $globalDir -and (Test-Path (Join-Path $repoRoot 'AI_PROJECT_BOOTSTRAP'))) {
+        try {
+            if (-not (Test-Path $globalDir)) {
+                [IO.Directory]::CreateDirectory($globalDir) | Out-Null
+            }
+            $destBootstrap = Join-Path $globalDir 'AI_PROJECT_BOOTSTRAP'
+            if (-not (Test-Path $destBootstrap)) {
+                Copy-Item -Path (Join-Path $repoRoot 'AI_PROJECT_BOOTSTRAP') -Destination $globalDir -Recurse -Force
+                $copied = $true
+            }
+            foreach ($rootFile in @('README.md', 'LICENSE', '.gitignore', 'install.ps1', 'install.py')) {
+                $src = Join-Path $repoRoot $rootFile
+                if (Test-Path $src) {
+                    Copy-Item -Path $src -Destination $globalDir -Force
+                }
+            }
+        }
+        catch {}
+    }
+
+    return [ordered]@{
+        action = 'install'
+        ok = $true
+        profile = $profileFile
+        installed = $true
+        synced_to_home = $copied
+        functions = @('ai-init', 'ai-repair', 'ai-check', 'ai-upgrade')
+    }
+}
+
 try {
     $BootstrapManifest = Get-BootstrapManifest
     $TargetRoot = Resolve-TargetRoot -RawPath $TargetPath
@@ -577,6 +720,9 @@ try {
         'repair' { Invoke-Repair -TargetRoot $TargetRoot -Manifest $BootstrapManifest }
         'upgrade' {
             Invoke-Upgrade -TargetRoot $TargetRoot -Manifest $BootstrapManifest -ForceOverwrite $Force.IsPresent
+        }
+        'install' {
+            Invoke-Install -BootstrapRoot $BootstrapRoot -UninstallAction $Uninstall.IsPresent -CustomProfilePath $ProfilePath
         }
     }
     $result | ConvertTo-Json -Depth 20

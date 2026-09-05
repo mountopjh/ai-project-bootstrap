@@ -25,18 +25,54 @@
 
 ## 🛠️ 快速开始
 
+### 方式一：安装为本机全局常驻命令（强烈推荐）
+
+在任何电脑克隆或下载本仓库后，运行一次一键安装脚本即可将快捷命令注入 PowerShell `$PROFILE`：
+
 ```powershell
-# 1. 检查目标项目完整性
-pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 check -TargetPath "目标项目路径"
+# 一键全局安装（Windows PowerShell 7+）
+pwsh -File .\install.ps1
 
-# 2. 初始化新项目规范
-pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 init -TargetPath "目标项目路径"
+# 或 Python 3.8+ 版本
+python install.py
+```
 
-# 3. 无损修复缺失模板
-pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 repair -TargetPath "目标项目路径"
+安装完成后，在**任何项目目录**（无论在哪个盘符或深层路径），打开终端即可直接使用：
+
+```powershell
+# 1. 在当前项目目录一键初始化（0.2秒完成，0 Token）
+ai-init
+
+# 2. 换电脑或移动目录后，一键刷新本机 hooks 并补齐文件
+ai-repair
+
+# 3. 检查当前项目规范完整性
+ai-check
+
+# 4. 安全升级模板（自动备份修改）
+ai-upgrade -Force
+```
+
+> **提示**：以上命令默认作用于当前目录（`.`），也可指定路径，例如 `ai-init "D:\my-project"`。如需卸载全局函数，运行 `pwsh -File .\install.ps1 -Uninstall` 即可。
+
+---
+
+### 方式二：直接通过脚本调用
+
+无需全局安装，直接运行核心脚本（目标路径 `-TargetPath` 默认为当前目录 `.`）：
+
+```powershell
+# 1. 初始化新项目规范
+pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 init
+
+# 2. 检查项目完整性
+pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 check
+
+# 3. 无损修复缺失模板与本机 hooks
+pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 repair
 
 # 4. 安全升级（自动增量备份原修改）
-pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 upgrade -TargetPath "目标项目路径" -Force
+pwsh -File .\AI_PROJECT_BOOTSTRAP\bootstrap.ps1 upgrade -Force
 ```
 
 ---

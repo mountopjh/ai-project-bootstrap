@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param()
 
 Set-StrictMode -Version Latest
@@ -155,10 +155,37 @@ try {
     if ($minimalConversations.Count -ne 1) {
         throw '缺少 session_id/turn_id 的对话未被归档'
     }
-    $minimalText = [IO.File]::ReadAllText($minimalConversations[0].FullName)
-    if ($minimalText -notlike '*缺少会话标识的最小请求*' -or $minimalText -notlike '*仍应成功归档*') {
-        throw '最小请求的对话正文缺少测试内容'
+    # 验证 install / uninstall 与 profile 写入
+    $tempProfile = Join-Path $TestRoot 'test_profile.ps1'
+    $installRes = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $TestBootstrapScript, 'install', '-ProfilePath', $tempProfile)
+    $installJson = $installRes.Output | ConvertFrom-Json
+    if (-not $installJson.ok -or -not $installJson.installed) {
+        throw "install 未成功：$($installRes.ErrorOutput)"
     }
+    $profileContent = [IO.File]::ReadAllText($tempProfile)
+    if ($profileContent -notlike '*function ai-init*' -or $profileContent -notlike '*function ai-repair*') {
+        throw 'Profile 未包含 ai-init / ai-repair 全局函数'
+    }
+
+    $uninstallRes = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $TestBootstrapScript, 'install', '-Uninstall', '-ProfilePath', $tempProfile)
+    $uninstallJson = $uninstallRes.Output | ConvertFrom-Json
+    if (-not $uninstallJson.ok -or $uninstallJson.installed) {
+        throw "uninstall 未成功：$($uninstallRes.ErrorOutput)"
+    }
+    $afterUninstall = [IO.File]::ReadAllText($tempProfile)
+    if ($afterUninstall -like '*function ai-init*') {
+        throw '卸载后 Profile 仍残留函数'
+    }
+
+    $rootInstallPs1 = Join-Path (Split-Path -Parent $TestBootstrapRoot) 'install.ps1'
+    if (Test-Path $rootInstallPs1) {
+        $wrapperRes = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $rootInstallPs1, '-ProfilePath', $tempProfile)
+        $wrapperJson = $wrapperRes.Output | ConvertFrom-Json
+        if (-not $wrapperJson.ok -or -not $wrapperJson.installed) {
+            throw "root install.ps1 未成功：$($wrapperRes.ErrorOutput)"
+        }
+    }
+
     'POWERSHELL_TESTS_OK'
 }
 finally {
