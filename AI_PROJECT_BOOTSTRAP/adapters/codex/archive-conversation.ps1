@@ -55,7 +55,7 @@ function Get-ConversationTitle {
     $archiveTitle = [regex]::Replace($archiveTitle, '\s+', ' ').Trim(' ', '.')
 
     if ([string]::IsNullOrWhiteSpace($archiveTitle)) {
-        return '未命名对话'
+        return '用户消息缺失'
     }
     if ($archiveTitle.Length -gt 48) {
         $archiveTitle = $archiveTitle.Substring(0, 48).Trim()
@@ -159,7 +159,11 @@ try {
         $archivePromptWithoutAuthorization = [regex]::Replace($archivePrompt, '^\s*执行任务[。.!！]?\s*$', '')
         if ([string]::IsNullOrWhiteSpace($archivePromptWithoutAuthorization) -and [System.IO.File]::Exists($archiveStatePath)) {
             $archivePreviousState = [System.IO.File]::ReadAllText($archiveStatePath, $archiveUtf8) | ConvertFrom-Json
-            $archiveTitle = [string]$archivePreviousState.title + '-执行'
+            $archivePreviousTitle = [string]$archivePreviousState.title
+            if ([string]::IsNullOrWhiteSpace($archivePreviousTitle)) {
+                $archivePreviousTitle = '用户消息缺失'
+            }
+            $archiveTitle = $archivePreviousTitle + '-执行'
         }
         else {
             $archiveTitle = Get-ConversationTitle -Prompt $archivePrompt
@@ -186,7 +190,7 @@ try {
         else {
             $archiveRecord = [pscustomobject]@{
                 timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-                title = '未匹配对话'
+                title = '用户消息未捕获'
                 prompt = '[未获取到用户消息]'
                 session_id = [string]$archiveEvent.session_id
                 turn_id = [string]$archiveEvent.turn_id

@@ -13,6 +13,8 @@ from pathlib import Path
 
 
 TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S"
+MISSING_USER_MESSAGE_TITLE = "用户消息缺失"
+UNMATCHED_TURN_TITLE = "用户消息未捕获"
 
 
 def now_timestamp() -> str:
@@ -45,7 +47,7 @@ def conversation_title(prompt: object) -> str:
     title = re.sub(r"[<>:\"/\\|?*\x00-\x1f]+", " ", title)
     title = re.sub(r"\s+", " ", title).strip(" .")
     if not title:
-        return "未命名对话"
+        return MISSING_USER_MESSAGE_TITLE
     return title[:48].strip()
 
 
@@ -120,7 +122,7 @@ def process_event(event: dict[str, object], project_root: Path) -> None:
         authorization_only = not re.sub(r"^\s*执行任务[。.!！]?\s*$", "", prompt)
         if authorization_only and state_path.exists():
             previous = json.loads(state_path.read_text(encoding="utf-8"))
-            title = f"{previous.get('title', '未命名对话')}-执行"
+            title = f"{previous.get('title', MISSING_USER_MESSAGE_TITLE)}-执行"
         else:
             title = conversation_title(prompt)
             write_atomic(state_path, json.dumps({"title": title}, ensure_ascii=False))
@@ -143,7 +145,7 @@ def process_event(event: dict[str, object], project_root: Path) -> None:
     else:
         record = {
             "timestamp": now_timestamp(),
-            "title": "未匹配对话",
+            "title": UNMATCHED_TURN_TITLE,
             "prompt": "[未获取到用户消息]",
             "session_id": str(event.get("session_id") or ""),
             "turn_id": str(event.get("turn_id") or ""),

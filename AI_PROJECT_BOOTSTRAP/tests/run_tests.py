@@ -117,6 +117,34 @@ def main() -> int:
         ]
         assert len(minimal_conversations) == 1
         minimal_archived = minimal_conversations[0].read_text(encoding="utf-8")
+
+        unmatched_event = {
+            "hook_event_name": "Stop",
+            "session_id": f"unmatched-{uuid.uuid4().hex}",
+            "turn_id": f"turn-{uuid.uuid4().hex}",
+            "model": "local-test",
+            "last_assistant_message": "未捕获用户消息时仍应有可识别的归档名",
+        }
+        archiver = target / ".codex/hooks/archive_conversation.py"
+        unmatched_process = subprocess.run(
+            [sys.executable, str(archiver), "--project-root", str(target)],
+            input=json.dumps(unmatched_event, ensure_ascii=False),
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        if unmatched_process.returncode:
+            raise AssertionError(unmatched_process.stderr)
+        unmatched_conversations = [
+            path
+            for path in (target / "archive/conversations").glob("*.md")
+            if path.name != "INDEX.md" and path.name not in {c.name for c in conversations + minimal_conversations}
+        ]
+        assert len(unmatched_conversations) == 1
+        assert "用户消息未捕获" in unmatched_conversations[0].name
+        assert "未命名" not in unmatched_conversations[0].name
+        assert "未匹配" not in unmatched_conversations[0].name
+
         temp_profile = target / "test_profile.ps1"
         install_res = run("install", "--profile-path", str(temp_profile))
         assert install_res["ok"] and install_res["installed"]

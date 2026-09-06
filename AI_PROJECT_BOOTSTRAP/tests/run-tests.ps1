@@ -155,6 +155,29 @@ try {
     if ($minimalConversations.Count -ne 1) {
         throw '缺少 session_id/turn_id 的对话未被归档'
     }
+
+    $unmatchedPayload = [ordered]@{
+        hook_event_name = 'Stop'
+        session_id = 'unmatched-' + [guid]::NewGuid().ToString('N')
+        turn_id = 'turn-' + [guid]::NewGuid().ToString('N')
+        model = 'local-test'
+        last_assistant_message = '未捕获用户消息时仍应有可识别的归档名'
+    } | ConvertTo-Json -Compress
+    $archiver = Join-Path $TestRoot '.codex/hooks/archive-conversation.ps1'
+    Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $archiver, '-ProjectRootOverride', $TestRoot) -InputText $unmatchedPayload | Out-Null
+    $unmatchedConversations = @(
+        Get-ChildItem -LiteralPath (Join-Path $TestRoot 'archive/conversations') -Filter '*.md' |
+            Where-Object { $_.Name -like '*用户消息未捕获*' }
+    )
+    if (
+        $unmatchedConversations.Count -ne 1 -or
+        $unmatchedConversations[0].Name -notlike '*用户消息未捕获*' -or
+        $unmatchedConversations[0].Name -like '*未命名*' -or
+        $unmatchedConversations[0].Name -like '*未匹配*'
+    ) {
+        throw '未匹配 Stop 事件的对话归档命名不合规'
+    }
+
     # 验证 install / uninstall 与 profile 写入
     $tempProfile = Join-Path $TestRoot 'test_profile.ps1'
     $installRes = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $TestBootstrapScript, 'install', '-ProfilePath', $tempProfile)

@@ -44,6 +44,14 @@ PowerShell 强制升级参数为 `-Force`；Python 为 `--force`。备份目录�
 
 `.codex/hooks.json` 包含当前机器和项目路径，不应提交到 Git。新项目首次使用时运行 `init` 生成；已有项目 clone 到新机器或移动路径后，运行一次 `repair` 重新生成本机可用的钩子配置，也可在已有本地登记信息时通过 `upgrade` 更新。
 
+在目标项目根目录运行 `ai-init` 后，用 Codex 打开该项目并信任本地钩子，再开启一个新会话。每轮“用户消息 + AI 回答”完成时，钩子都会在本地写入 `archive/conversations/YYYYMMDD-HHMMSS_请求摘要.md` 并更新 `INDEX.md`。摘要取有效用户请求、移除文件名非法字符；消息缺失时会明确标注为“用户消息缺失”或“用户消息未捕获”，不会产生“未命名”文件。归档写入不调用模型或外部 API，也不会额外消耗 Token。
+
+### 其他 AI IDE 指引
+
+启动器可以在任意 AI IDE 打开的**目标项目根目录**中初始化和执行；`ai-init` 的默认目标就是当前目录 `.`。通用规则由 `AGENTS.md` 和 `START_HERE.md` 提供，所有任务都应在该项目目录内运行。
+
+当前仅 Codex 已接入自动生命周期钩子。其他 IDE 若能调用本地命令，可在每轮对话结束后把 JSON 输入传给项目内的 `tools/record-conversation.ps1` 或 `tools/record_conversation.py`，复用相同的 Markdown 归档器；没有可用生命周期钩子的 IDE 不能保证自动归档。后续应按各 IDE 的官方钩子机制新增适配器，而不是假定存在通用钩子。
+
 ## 自检
 
 ```powershell

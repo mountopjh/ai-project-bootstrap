@@ -5,3 +5,10 @@
 无论使用哪一种AI，开始项目前都必须读取项目根目录的 `AGENTS.md`，并把它视为唯一规则源。
 
 在 `AGENTS.md` 规定的执行授权完成后，再读取 `PROJECT_INDEX.md`，按索引加载当前任务所需的最少文件。不要默认加载历史归档。
+
+执行任务时必须以当前项目根目录为工作目录。
+
+## IDE 对话归档
+
+- Codex：本项目已生成 `.codex/hooks.json`。在信任该本地钩子并开启新会话后，每轮“用户消息 + AI 回答”会自动保存到 `archive/conversations/`，不调用模型或外部 API。
+- 其他 AI IDE：先遵循本文件与 `AGENTS.md`；如 IDE 没有可用的生命周期钩子，请在每轮结束后调用项目内的 `tools/record-conversation.ps1` 或 `tools/record_conversation.py` 保存对话。当前版本不将该手动方式误称为自动归档。
