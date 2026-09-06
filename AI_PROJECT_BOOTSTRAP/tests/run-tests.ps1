@@ -200,6 +200,34 @@ try {
         throw '卸载后 Profile 仍残留函数'
     }
 
+    $quickStartRoot = Join-Path $TestRoot 'empty-project-download-powershell'
+    [IO.Directory]::CreateDirectory($quickStartRoot) | Out-Null
+    Copy-Item -LiteralPath $TestBootstrapRoot -Destination (Join-Path $quickStartRoot 'AI_PROJECT_BOOTSTRAP') -Recurse
+    $repoRoot = Split-Path -Parent $TestBootstrapRoot
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'start.ps1') -Destination $quickStartRoot
+    $quickStartScript = Join-Path $quickStartRoot 'start.ps1'
+    $quickStartResult = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $quickStartScript)
+    $quickResult = $quickStartResult.Output | ConvertFrom-Json
+    if (-not $quickResult.ok -or $quickResult.mode -ne 'init' -or $quickResult.message -notlike '*无需逐个分析*') {
+        throw "PowerShell 一键首次启动失败：$($quickStartResult.ErrorOutput)"
+    }
+    if (
+        -not (Test-Path -LiteralPath (Join-Path $quickStartRoot 'START_HERE.md')) -or
+        -not (Test-Path -LiteralPath (Join-Path $quickStartRoot 'AGENTS.md')) -or
+        -not (Test-Path -LiteralPath (Join-Path $quickStartRoot '.codex/hooks.json'))
+    ) {
+        throw 'PowerShell 一键启动未生成必要入口或 Codex 钩子'
+    }
+    $quickEntry = [IO.File]::ReadAllText((Join-Path $quickStartRoot 'START_HERE.md'))
+    if ($quickEntry -notlike '*不要逐个读取或分析*') {
+        throw '生成的入口未禁止逐个分析启动器源码'
+    }
+    $quickRepeatResult = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $quickStartScript)
+    $quickRepeat = $quickRepeatResult.Output | ConvertFrom-Json
+    if (-not $quickRepeat.ok -or $quickRepeat.mode -ne 'repair') {
+        throw "PowerShell 一键重复启动失败：$($quickRepeatResult.ErrorOutput)"
+    }
+
     $rootInstallPs1 = Join-Path (Split-Path -Parent $TestBootstrapRoot) 'install.ps1'
     if (Test-Path $rootInstallPs1) {
         $wrapperRes = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $rootInstallPs1, '-ProfilePath', $tempProfile)

@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 新增
+
+- 新增根目录 `start.ps1` 与 `start.py`：空项目目录克隆仓库后可用单个命令完成首次初始化、重复无损修复和完整性检查，无需先安装全局函数。
+- 一键启动结果明确指定 `START_HERE.md` 为 AI 唯一入口，并补充回归测试，确保 AI 不必逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+
 ## [1.3.0] - 2026-09-05
 
 ### 新增

@@ -4,7 +4,21 @@
 
 ## 快速使用
 
-### 全局一键命令（推荐）
+### 空项目目录一键启动（推荐）
+
+仓库克隆到空项目目录后，在仓库根目录运行以下任一命令，不需要先安装全局函数：
+
+```powershell
+pwsh -NoProfile -File .\start.ps1
+```
+
+```text
+python start.py
+```
+
+首次运行自动执行 `init`，重复运行自动执行 `repair`，随后运行 `check`。成功后，AI 只读取根目录 `START_HERE.md`，再按项目索引按需加载上下文；无需逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+
+### 全局一键命令（可选）
 
 在仓库根目录下运行一次 `pwsh -File .\install.ps1`（或 `python install.py`），即可在终端任何项目路径直接使用：
 - `ai-init`：在当前目录初始化新项目。

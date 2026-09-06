@@ -25,7 +25,26 @@
 
 ## 🛠️ 快速开始
 
-### 方式一：安装为本机全局常驻命令（强烈推荐）
+### 空项目目录克隆后一键启动（推荐）
+
+把仓库下载到空项目目录后，只需运行一个启动命令：
+
+```powershell
+git clone https://github.com/mountopjh/ai-project-bootstrap .
+pwsh -NoProfile -File .\start.ps1
+```
+
+没有 PowerShell 7 时可改用：
+
+```text
+python start.py
+```
+
+首次运行会初始化当前项目，重复运行会执行无损修复，并自动完成完整性检查。成功后，AI 只需从项目根目录的 `START_HERE.md` 进入，再按 `PROJECT_INDEX.md` 路由读取必要文件；除非任务是维护启动器本身，不需要逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+
+Codex 需审核并信任生成的 `.codex/hooks.json`，然后开启新会话，自动对话归档才会生效。
+
+### 可选：安装为本机全局常驻命令
 
 在任何电脑克隆或下载本仓库后，运行一次一键安装脚本即可将快捷命令注入 PowerShell `$PROFILE`：
 
@@ -64,7 +83,7 @@ ai-upgrade -Force
 
 ---
 
-### 方式二：直接通过脚本调用
+### 高级用法：直接调用核心脚本
 
 无需全局安装，直接运行核心脚本（目标路径 `-TargetPath` 默认为当前目录 `.`）：
 

@@ -153,6 +153,39 @@ def main() -> int:
         assert uninstall_res["ok"] and not uninstall_res["installed"]
         assert "function ai-init" not in temp_profile.read_text(encoding="utf-8")
 
+        quick_start_root = target / "empty-project-download-python"
+        quick_start_root.mkdir()
+        shutil.copytree(BOOTSTRAP, quick_start_root / "AI_PROJECT_BOOTSTRAP")
+        shutil.copy2(BOOTSTRAP.parent / "start.py", quick_start_root / "start.py")
+        quick_start = subprocess.run(
+            [sys.executable, str(quick_start_root / "start.py")],
+            cwd=quick_start_root,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        if quick_start.returncode:
+            raise AssertionError(quick_start.stderr)
+        quick_result = json.loads(quick_start.stdout)
+        assert quick_result["ok"] and quick_result["mode"] == "init"
+        assert "无需逐个分析" in quick_result["message"]
+        assert (quick_start_root / "START_HERE.md").is_file()
+        assert (quick_start_root / "AGENTS.md").is_file()
+        assert (quick_start_root / ".codex/hooks.json").is_file()
+        assert "不要逐个读取或分析" in (quick_start_root / "START_HERE.md").read_text(encoding="utf-8")
+
+        quick_repeat = subprocess.run(
+            [sys.executable, str(quick_start_root / "start.py")],
+            cwd=quick_start_root,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+        )
+        if quick_repeat.returncode:
+            raise AssertionError(quick_repeat.stderr)
+        repeat_result = json.loads(quick_repeat.stdout)
+        assert repeat_result["ok"] and repeat_result["mode"] == "repair"
+
         print("PYTHON_TESTS_OK")
         return 0
     finally:
