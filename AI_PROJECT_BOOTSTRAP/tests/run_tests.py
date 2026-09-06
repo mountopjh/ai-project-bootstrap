@@ -38,6 +38,26 @@ def main() -> int:
     try:
         assert run("init", "--target", str(target))["ok"]
         assert run("check", "--target", str(target))["ok"]
+        agents_text = (target / "AGENTS.md").read_text(encoding="utf-8")
+        for required_rule in (
+            "项目规则不得声称覆盖上级指令",
+            "纯咨询、解释、状态询问",
+            "授权仅覆盖已复述范围，并持续到任务完成",
+            "项目子目录或隔离的系统临时目录",
+            "保留用户已有改动",
+            "不得泄露、写入或提交密钥",
+            "修改后运行与风险相称的测试",
+            "已生成的归档正文不可修改",
+            "生态、框架或工具规定的标准文件名",
+            "业务数据、接口协议、数据库",
+        ):
+            assert required_rule in agents_text
+        start_here_text = (target / "START_HERE.md").read_text(encoding="utf-8")
+        assert "执行任务时必须以当前项目根目录" not in start_here_text
+        ai_prompt_text = (target / "AI_START_PROMPT.md").read_text(encoding="utf-8")
+        assert "仅在人类明确发送" not in ai_prompt_text
+        assert "不要逐个分析启动器源码" in ai_prompt_text
+
         (target / "START_HERE.md").unlink()
         repaired = run("repair", "--target", str(target))
         assert "START_HERE.md" in repaired["changed"]
@@ -172,7 +192,10 @@ def main() -> int:
         assert (quick_start_root / "START_HERE.md").is_file()
         assert (quick_start_root / "AGENTS.md").is_file()
         assert (quick_start_root / ".codex/hooks.json").is_file()
-        assert "不要逐个读取或分析" in (quick_start_root / "START_HERE.md").read_text(encoding="utf-8")
+        assert "仅在维护启动器时进入" in (quick_start_root / "START_HERE.md").read_text(encoding="utf-8")
+        assert "不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码" in (
+            quick_start_root / "AGENTS.md"
+        ).read_text(encoding="utf-8")
 
         quick_repeat = subprocess.run(
             [sys.executable, str(quick_start_root / "start.py")],

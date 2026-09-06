@@ -7,7 +7,7 @@
 | 优先级 | 文件 | 读取条件 | 用途 |
 | --- | --- | --- | --- |
 | 0 | AGENTS.md | Codex 自动加载；其他AI经 START_HERE.md 加载 | 当前有效规则 |
-| 1 | DEVELOPMENT_MAP.md | 获得授权后的开发、规划或续接任务 | 当前进展、问题与下一项任务 |
+| 1 | DEVELOPMENT_MAP.md | 开发、规划、只读审查或续接需要项目状态时 | 当前进展、问题与下一项任务 |
 | 2 | CODE_MAP.md | 代码设计、实现、调试、审查或结构分析 | 当前代码结构与关键路径 |
 | 3 | archive/conversations/INDEX.md | 仅在追溯历史对话时 | 本地对话归档索引 |
 

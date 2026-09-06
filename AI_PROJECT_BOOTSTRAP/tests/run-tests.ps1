@@ -74,6 +74,32 @@ try {
     if (-not (Invoke-TestBootstrap -Mode 'check').ok) {
         throw '首次 check 未通过'
     }
+    $agentsText = [IO.File]::ReadAllText((Join-Path $TestRoot 'AGENTS.md'))
+    foreach ($requiredRule in @(
+        '项目规则不得声称覆盖上级指令',
+        '纯咨询、解释、状态询问',
+        '授权仅覆盖已复述范围，并持续到任务完成',
+        '项目子目录或隔离的系统临时目录',
+        '保留用户已有改动',
+        '不得泄露、写入或提交密钥',
+        '修改后运行与风险相称的测试',
+        '已生成的归档正文不可修改',
+        '生态、框架或工具规定的标准文件名',
+        '业务数据、接口协议、数据库'
+    )) {
+        if ($agentsText -notlike "*$requiredRule*") {
+            throw "AGENTS 规则缺失：$requiredRule"
+        }
+    }
+    $startHereText = [IO.File]::ReadAllText((Join-Path $TestRoot 'START_HERE.md'))
+    if ($startHereText -like '*执行任务时必须以当前项目根目录*') {
+        throw 'START_HERE 重复维护了执行规则'
+    }
+    $aiPromptText = [IO.File]::ReadAllText((Join-Path $TestRoot 'AI_START_PROMPT.md'))
+    if ($aiPromptText -like '*仅在人类明确发送*' -or $aiPromptText -notlike '*不要逐个分析启动器源码*') {
+        throw 'AI_START_PROMPT 未保持为精简入口'
+    }
+
     [IO.File]::Delete((Join-Path $TestRoot 'START_HERE.md'))
     $repair = Invoke-TestBootstrap -Mode 'repair'
     if ('START_HERE.md' -notin $repair.changed) {
@@ -219,8 +245,12 @@ try {
         throw 'PowerShell 一键启动未生成必要入口或 Codex 钩子'
     }
     $quickEntry = [IO.File]::ReadAllText((Join-Path $quickStartRoot 'START_HERE.md'))
-    if ($quickEntry -notlike '*不要逐个读取或分析*') {
-        throw '生成的入口未禁止逐个分析启动器源码'
+    $quickAgents = [IO.File]::ReadAllText((Join-Path $quickStartRoot 'AGENTS.md'))
+    if (
+        -not $quickEntry.Contains('仅在维护启动器时进入') -or
+        -not $quickAgents.Contains('不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码')
+    ) {
+        throw '生成的入口或唯一规则源未正确限制启动器源码读取'
     }
     $quickRepeatResult = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $quickStartScript)
     $quickRepeat = $quickRepeatResult.Output | ConvertFrom-Json
