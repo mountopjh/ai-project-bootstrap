@@ -41,6 +41,7 @@ def main() -> int:
         agents_text = (target / "AGENTS.md").read_text(encoding="utf-8")
         for required_rule in (
             "项目规则不得声称覆盖上级指令",
+            "完整等于“初始化”或“初始化启动器”",
             "纯咨询、解释、状态询问",
             "授权仅覆盖已复述范围，并持续到任务完成",
             "项目开发、代码开发、代码修改",
@@ -174,10 +175,20 @@ def main() -> int:
         assert uninstall_res["ok"] and not uninstall_res["installed"]
         assert "function ai-init" not in temp_profile.read_text(encoding="utf-8")
 
+        custom_agents_root = target / "custom-agents-init-conflict"
+        custom_agents_root.mkdir()
+        (custom_agents_root / "AGENTS.md").write_text("# 用户自定义规则\n", encoding="utf-8")
+        custom_conflict = run("init", "--target", str(custom_agents_root), expected=1)
+        assert not custom_conflict["ok"] and "AGENTS.md" in custom_conflict["error"]
+
         quick_start_root = target / "empty-project-download-python"
         quick_start_root.mkdir()
         shutil.copytree(BOOTSTRAP, quick_start_root / "AI_PROJECT_BOOTSTRAP")
         shutil.copy2(BOOTSTRAP.parent / "start.py", quick_start_root / "start.py")
+        shutil.copy2(BOOTSTRAP.parent / "AGENTS.md", quick_start_root / "AGENTS.md")
+        preinit_agents = (quick_start_root / "AGENTS.md").read_text(encoding="utf-8")
+        assert "<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->" in preinit_agents
+        assert "初始化启动器" in preinit_agents
         quick_start = subprocess.run(
             [sys.executable, str(quick_start_root / "start.py")],
             cwd=quick_start_root,
@@ -190,13 +201,16 @@ def main() -> int:
         quick_result = json.loads(quick_start.stdout)
         assert quick_result["ok"] and quick_result["mode"] == "init"
         assert "无需逐个分析" in quick_result["message"]
+        assert quick_result["hook_trust_required"] is True
+        assert Path(quick_result["hook_config"]) == quick_start_root / ".codex" / "hooks.json"
         assert (quick_start_root / "START_HERE.md").is_file()
         assert (quick_start_root / "AGENTS.md").is_file()
         assert (quick_start_root / ".codex/hooks.json").is_file()
         assert "仅在维护启动器时进入" in (quick_start_root / "START_HERE.md").read_text(encoding="utf-8")
-        assert "不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码" in (
-            quick_start_root / "AGENTS.md"
-        ).read_text(encoding="utf-8")
+        initialized_agents = (quick_start_root / "AGENTS.md").read_text(encoding="utf-8")
+        assert "不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码" in initialized_agents
+        assert "完整等于“初始化”或“初始化启动器”" in initialized_agents
+        assert "<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->" not in initialized_agents
 
         quick_repeat = subprocess.run(
             [sys.executable, str(quick_start_root / "start.py")],

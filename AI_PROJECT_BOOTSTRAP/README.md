@@ -4,19 +4,21 @@
 
 ## 快速使用
 
-### 空项目目录一键启动（推荐）
+### 空项目目录一句话启动（推荐）
 
-仓库克隆到空项目目录后，在仓库根目录运行以下任一命令，不需要先安装全局函数：
+仓库克隆到空项目目录后，用支持读取 `AGENTS.md` 和执行本地命令的 AI IDE 打开仓库根目录，发送以下任一条完整消息：
 
-```powershell
-pwsh -NoProfile -File .\start.ps1
+```text
+初始化
 ```
 
 ```text
-python start.py
+初始化启动器
 ```
 
-首次运行自动执行 `init`，重复运行自动执行 `repair`，随后运行 `check`。成功后，AI 只读取根目录 `START_HERE.md`，再按项目索引按需加载上下文；无需逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+仓库根目录预置的首次启动 `AGENTS.md` 会让 IDE 自动运行 `start.ps1` 或 `start.py`。首次运行自动执行 `init`，重复运行自动执行 `repair`，随后运行 `check`。成功后，AI 只读取根目录 `START_HERE.md`，再按项目索引按需加载上下文；无需逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+
+IDE 的本地命令权限确认，以及 Codex 对 `.codex/hooks.json` 的首次安全审核与信任，仍必须由用户完成。若 IDE 不支持上述能力，可手动运行 `pwsh -NoProfile -File .\start.ps1` 或 `python start.py`。
 
 ### 全局一键命令（可选）
 

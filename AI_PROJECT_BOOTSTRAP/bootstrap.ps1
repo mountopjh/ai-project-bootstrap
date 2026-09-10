@@ -22,6 +22,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 $ErrorActionPreference = 'Stop'
 $BootstrapRoot = $PSScriptRoot
 $MetadataName = '.ai-project-bootstrap.json'
+$PreinitAgentsMarker = '<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->'
 $ArchiveDirectories = @(
     'archive/development',
     'archive/code',
@@ -56,6 +57,22 @@ function Resolve-TargetRoot {
 function Read-Utf8Text {
     param([string]$Path)
     return [IO.File]::ReadAllText($Path, [Text.UTF8Encoding]::new($false))
+}
+
+function Test-PreinitAgentsFile {
+    param(
+        [string]$Path,
+        [string]$Relative
+    )
+    if ($Relative -ne 'AGENTS.md' -or -not [IO.File]::Exists($Path)) {
+        return $false
+    }
+    try {
+        return (Read-Utf8Text -Path $Path).Contains($PreinitAgentsMarker)
+    }
+    catch {
+        return $false
+    }
 }
 
 function Write-AtomicBytes {
@@ -280,9 +297,14 @@ function Invoke-Init {
     )
     $conflicts = [Collections.Generic.List[string]]::new()
     foreach ($entry in $Manifest.files) {
-        if ($entry.policy -ne 'append' -and (Test-Path -LiteralPath (Join-Path $TargetRoot $entry.target))) {
-            $conflicts.Add($entry.target)
+        $path = Join-Path $TargetRoot $entry.target
+        if ($entry.policy -eq 'append' -or -not (Test-Path -LiteralPath $path)) {
+            continue
         }
+        if (Test-PreinitAgentsFile -Path $path -Relative $entry.target) {
+            continue
+        }
+        $conflicts.Add($entry.target)
     }
     if ([IO.File]::Exists((Get-MetadataPath -TargetRoot $TargetRoot))) {
         $conflicts.Add($MetadataName)

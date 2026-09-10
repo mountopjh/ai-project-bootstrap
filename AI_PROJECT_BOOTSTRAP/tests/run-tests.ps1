@@ -77,6 +77,7 @@ try {
     $agentsText = [IO.File]::ReadAllText((Join-Path $TestRoot 'AGENTS.md'))
     foreach ($requiredRule in @(
         '项目规则不得声称覆盖上级指令',
+        '完整等于“初始化”或“初始化启动器”',
         '纯咨询、解释、状态询问',
         '授权仅覆盖已复述范围，并持续到任务完成',
         '项目开发、代码开发、代码修改',
@@ -227,16 +228,52 @@ try {
         throw '卸载后 Profile 仍残留函数'
     }
 
+    $customAgentsRoot = Join-Path $TestRoot 'custom-agents-init-conflict'
+    [IO.Directory]::CreateDirectory($customAgentsRoot) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $customAgentsRoot 'AGENTS.md'), "# 用户自定义规则`n")
+    $customConflictResult = Invoke-TestProcess -FilePath $psExe -Arguments @(
+        '-NoProfile',
+        '-File',
+        $TestBootstrapScript,
+        'init',
+        '-TargetPath',
+        $customAgentsRoot
+    ) -ExpectedExitCode 1
+    $customConflictText = if ($customConflictResult.Output.Trim()) {
+        $customConflictResult.Output
+    }
+    else {
+        $customConflictResult.ErrorOutput
+    }
+    $customConflict = $customConflictText | ConvertFrom-Json
+    if ($customConflict.ok -or $customConflict.error -notlike '*AGENTS.md*') {
+        throw 'init 未保护用户自定义 AGENTS.md'
+    }
+
     $quickStartRoot = Join-Path $TestRoot 'empty-project-download-powershell'
     [IO.Directory]::CreateDirectory($quickStartRoot) | Out-Null
     Copy-Item -LiteralPath $TestBootstrapRoot -Destination (Join-Path $quickStartRoot 'AI_PROJECT_BOOTSTRAP') -Recurse
     $repoRoot = Split-Path -Parent $TestBootstrapRoot
     Copy-Item -LiteralPath (Join-Path $repoRoot 'start.ps1') -Destination $quickStartRoot
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'AGENTS.md') -Destination $quickStartRoot
+    $preinitAgents = [IO.File]::ReadAllText((Join-Path $quickStartRoot 'AGENTS.md'))
+    if (
+        -not $preinitAgents.Contains('<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->') -or
+        -not $preinitAgents.Contains('初始化启动器')
+    ) {
+        throw '仓库首次初始化入口缺少自然语言触发规则'
+    }
     $quickStartScript = Join-Path $quickStartRoot 'start.ps1'
     $quickStartResult = Invoke-TestProcess -FilePath $psExe -Arguments @('-NoProfile', '-File', $quickStartScript)
     $quickResult = $quickStartResult.Output | ConvertFrom-Json
     if (-not $quickResult.ok -or $quickResult.mode -ne 'init' -or $quickResult.message -notlike '*无需逐个分析*') {
         throw "PowerShell 一键首次启动失败：$($quickStartResult.ErrorOutput)"
+    }
+    if (
+        -not $quickResult.hook_trust_required -or
+        $quickResult.hook_config -ne (Join-Path $quickStartRoot '.codex\hooks.json')
+    ) {
+        throw 'PowerShell 一键启动未正确报告 Codex 钩子信任状态'
     }
     if (
         -not (Test-Path -LiteralPath (Join-Path $quickStartRoot 'START_HERE.md')) -or
@@ -249,7 +286,9 @@ try {
     $quickAgents = [IO.File]::ReadAllText((Join-Path $quickStartRoot 'AGENTS.md'))
     if (
         -not $quickEntry.Contains('仅在维护启动器时进入') -or
-        -not $quickAgents.Contains('不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码')
+        -not $quickAgents.Contains('不得扫描或分析 `AI_PROJECT_BOOTSTRAP/` 源码') -or
+        -not $quickAgents.Contains('完整等于“初始化”或“初始化启动器”') -or
+        $quickAgents.Contains('<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->')
     ) {
         throw '生成的入口或唯一规则源未正确限制启动器源码读取'
     }

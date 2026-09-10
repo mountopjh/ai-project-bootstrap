@@ -54,5 +54,7 @@ if (-not $check.ok) {
     project_root = $projectRoot
     changed = @($result.changed)
     ai_entry = (Join-Path $projectRoot 'START_HERE.md')
-    message = '启动完成。AI 只需先读取项目根目录 START_HERE.md；无需逐个分析 AI_PROJECT_BOOTSTRAP 源码。'
+    hook_config = (Join-Path $projectRoot '.codex\hooks.json')
+    hook_trust_required = $true
+    message = '启动完成。AI 只需先读取项目根目录 START_HERE.md；无需逐个分析 AI_PROJECT_BOOTSTRAP 源码。Codex 自动对话归档仍需用户审核并信任 .codex/hooks.json，然后在新会话中生效。'
 } | ConvertTo-Json -Depth 20

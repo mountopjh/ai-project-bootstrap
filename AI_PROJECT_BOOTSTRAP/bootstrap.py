@@ -16,6 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 META_NAME = ".ai-project-bootstrap.json"
+PREINIT_AGENTS_MARKER = "<!-- AI_PROJECT_BOOTSTRAP_PREINIT -->"
 ARCHIVE_DIRS = (
     "archive/development",
     "archive/code",
@@ -41,6 +42,15 @@ def valid_time(value: str) -> bool:
         datetime.strptime(value, "%Y%m%d-%H%M%S")
         return True
     except ValueError:
+        return False
+
+
+def is_preinit_agents(path: Path, relative: str) -> bool:
+    if relative != "AGENTS.md" or not path.is_file():
+        return False
+    try:
+        return PREINIT_AGENTS_MARKER in path.read_text(encoding="utf-8-sig")
+    except OSError:
         return False
 
 
@@ -174,11 +184,14 @@ def write_meta(
 
 
 def init(target: Path, data: dict[str, Any]) -> dict[str, Any]:
-    conflicts = [
-        entry["target"]
-        for entry in data["files"]
-        if entry["policy"] != "append" and (target / entry["target"]).exists()
-    ]
+    conflicts: list[str] = []
+    for entry in data["files"]:
+        path = target / entry["target"]
+        if entry["policy"] == "append" or not path.exists():
+            continue
+        if is_preinit_agents(path, entry["target"]):
+            continue
+        conflicts.append(entry["target"])
     if meta_path(target).exists():
         conflicts.append(META_NAME)
     if conflicts:

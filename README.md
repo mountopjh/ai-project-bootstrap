@@ -25,24 +25,35 @@
 
 ## 🛠️ 快速开始
 
-### 空项目目录克隆后一键启动（推荐）
+### 空项目目录克隆后一句话启动（推荐）
 
-把仓库下载到空项目目录后，只需运行一个启动命令：
+把仓库下载到空项目目录：
 
 ```powershell
 git clone https://github.com/mountopjh/ai-project-bootstrap .
+```
+
+用支持读取项目 `AGENTS.md` 和执行本地命令的 AI IDE 打开该目录，然后发送以下任一条完整消息：
+
+```text
+初始化
+```
+
+```text
+初始化启动器
+```
+
+仓库自带的首次启动 `AGENTS.md` 会让 IDE 自动运行本地 `start.ps1` 或 `start.py`。首次运行会初始化当前项目，重复运行会执行无损修复，并自动完成完整性检查。成功后，AI 只需从项目根目录的 `START_HERE.md` 进入，再按 `PROJECT_INDEX.md` 路由读取必要文件；除非任务是维护启动器本身，不需要逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
+
+IDE 仍可能根据自身权限策略要求确认本地命令。Codex 还必须由用户审核并信任生成的 `.codex/hooks.json`，然后开启新会话，自动对话归档才会生效；启动器不会绕过这项安全确认。
+
+若 IDE 不支持读取 `AGENTS.md` 或执行本地命令，可手动运行：
+
+```powershell
 pwsh -NoProfile -File .\start.ps1
 ```
 
-没有 PowerShell 7 时可改用：
-
-```text
-python start.py
-```
-
-首次运行会初始化当前项目，重复运行会执行无损修复，并自动完成完整性检查。成功后，AI 只需从项目根目录的 `START_HERE.md` 进入，再按 `PROJECT_INDEX.md` 路由读取必要文件；除非任务是维护启动器本身，不需要逐个分析 `AI_PROJECT_BOOTSTRAP/` 源码。
-
-Codex 需审核并信任生成的 `.codex/hooks.json`，然后开启新会话，自动对话归档才会生效。
+没有 PowerShell 7 时可改用 `python start.py`。
 
 ### 可选：安装为本机全局常驻命令
 
