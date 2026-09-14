@@ -18,6 +18,7 @@
 - .codex/hooks.json：Codex 生命周期钩子配置。
 - .codex/hooks/archive-conversation.ps1：Windows/PowerShell 对话归档实现。
 - .codex/hooks/archive_conversation.py：跨平台/Python 对话归档实现。
+- .kiro/hooks/archive-conversation.kiro.hook：Kiro `agentStop` 生命周期钩子配置，默认启用。
 - tools/record-conversation.ps1：通用 PowerShell 手动记录入口。
 - tools/record_conversation.py：通用 Python 手动记录入口。
 - archive/conversations/INDEX.md：对话归档索引。
@@ -25,6 +26,7 @@
 ## 程序结构
 
 - Codex：`UserPromptSubmit` 暂存用户消息，`Stop` 配对AI回答并写入归档。
+- Kiro：`agentStop` 钩子在每轮回答结束后自动触发，调用通用记录工具归档。
 - 其他AI：支持本地命令时调用通用记录工具；不支持本地命令时人工保存。
 - 对话文件：`archive/conversations/YYYYMMDD-HHMMSS_核心内容.md`。
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,32 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent
 BOOTSTRAP = PROJECT_ROOT / "AI_PROJECT_BOOTSTRAP" / "bootstrap.py"
 METADATA = PROJECT_ROOT / ".ai-project-bootstrap.json"
+
+
+def detect_hook_status() -> tuple[str, bool, str]:
+    """Detect whether the current IDE has a known auto-archive hook wired up."""
+    is_kiro = os.environ.get("TERM_PROGRAM") == "kiro"
+    kiro_hook_path = PROJECT_ROOT / ".kiro" / "hooks" / "archive-conversation.kiro.hook"
+    kiro_hook_ready = is_kiro and kiro_hook_path.is_file()
+
+    if is_kiro and kiro_hook_ready:
+        message = (
+            "检测到 Kiro 环境：.kiro/hooks/archive-conversation.kiro.hook 已生成并默认启用，"
+            "每轮对话结束会自动归档，无需额外信任步骤。"
+        )
+    elif is_kiro:
+        message = (
+            "检测到 Kiro 环境，但未能确认 .kiro/hooks/archive-conversation.kiro.hook 已生成；"
+            "请运行 repair 后重试，或改用 tools/record_conversation.py 手动归档。"
+        )
+    else:
+        message = (
+            "未检测到已知的自动钩子环境（当前 TERM_PROGRAM 非 kiro）。Codex 用户可信任 "
+            ".codex/hooks.json 后自动归档；其他 IDE 请在每轮结束后手动运行 "
+            "tools/record-conversation.ps1 或 tools/record_conversation.py。"
+        )
+    detected_ide = "kiro" if is_kiro else "unknown"
+    return detected_ide, kiro_hook_ready, message
 
 
 def invoke(action: str) -> tuple[int, dict[str, object] | None, str]:
@@ -55,6 +82,7 @@ def main() -> int:
         print(json.dumps(failure, ensure_ascii=False, indent=2), file=sys.stderr)
         return check_code or 1
 
+    detected_ide, kiro_hook_active, hook_status_message = detect_hook_status()
     response = {
         "action": "start",
         "ok": True,
@@ -64,6 +92,9 @@ def main() -> int:
         "ai_entry": str(PROJECT_ROOT / "START_HERE.md"),
         "hook_config": str(PROJECT_ROOT / ".codex" / "hooks.json"),
         "hook_trust_required": True,
+        "detected_ide": detected_ide,
+        "kiro_hook_active": kiro_hook_active,
+        "hook_status_message": hook_status_message,
         "message": (
             "启动完成。AI 只需先读取项目根目录 START_HERE.md；无需逐个分析 "
             "AI_PROJECT_BOOTSTRAP 源码。Codex 自动对话归档仍需用户审核并信任 "

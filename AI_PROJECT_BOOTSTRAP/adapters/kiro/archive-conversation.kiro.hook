@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "对话自动归档",
+  "description": "每轮 AI 回答结束后，自动将本轮用户消息与 AI 回答归档到 archive/conversations 目录，保持零 Token 本地记录",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "本轮对话已结束。请调用项目根目录下的 tools/record-conversation.ps1（Windows 优先 pwsh，缺失时用 python tools/record_conversation.py），将本轮的用户原始消息和你刚才的完整回答，以 JSON（字段 user、assistant，可选 session_id/turn_id/model）通过标准输入传给该脚本，完成本地归档。只做归档，不要输出多余说明。"
+  }
+}

@@ -14,6 +14,7 @@
     {"source": "adapters/codex/hooks.json.template", "target": ".codex/hooks.json", "render": true, "policy": "local"},
     {"source": "adapters/codex/archive-conversation.ps1", "target": ".codex/hooks/archive-conversation.ps1", "render": false, "policy": "managed"},
     {"source": "adapters/codex/archive_conversation.py", "target": ".codex/hooks/archive_conversation.py", "render": false, "policy": "managed"},
+    {"source": "adapters/kiro/archive-conversation.kiro.hook", "target": ".kiro/hooks/archive-conversation.kiro.hook", "render": false, "policy": "managed"},
     {"source": "adapters/generic/record-conversation.ps1", "target": "tools/record-conversation.ps1", "render": false, "policy": "managed"},
     {"source": "adapters/generic/record_conversation.py", "target": "tools/record_conversation.py", "render": false, "policy": "managed"},
     {"source": "templates/gitignore.append", "target": ".gitignore", "render": false, "policy": "append"}

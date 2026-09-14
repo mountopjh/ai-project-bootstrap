@@ -9,4 +9,5 @@
 ## IDE 对话归档
 
 - Codex：本项目已生成 `.codex/hooks.json`。在信任该本地钩子并开启新会话后，每轮“用户消息 + AI 回答”会自动保存到 `archive/conversations/`，不调用模型或外部 API。
+- Kiro：本项目已生成 `.kiro/hooks/archive-conversation.kiro.hook` 并默认启用，每轮对话结束（`agentStop`）会自动调用本地记录工具归档，无需额外信任步骤。
 - 其他 AI IDE：从本文件进入并读取 `AGENTS.md`；如 IDE 没有可用的生命周期钩子，可在每轮结束后调用项目内的 `tools/record-conversation.ps1` 或 `tools/record_conversation.py` 保存对话。

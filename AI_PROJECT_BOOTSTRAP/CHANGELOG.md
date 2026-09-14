@@ -8,6 +8,8 @@
 
 ### 新增
 
+- 新增 Kiro 适配器：`adapters/kiro/archive-conversation.kiro.hook`，随初始化写入 `.kiro/hooks/archive-conversation.kiro.hook` 并默认启用。Kiro 的 `agentStop` 生命周期钩子会在每轮对话结束后自动调用通用记录工具归档，无需像 Codex 那样额外信任。
+- `start.ps1` 与 `start.py` 在启动结果中新增 `detected_ide`、`kiro_hook_active`、`hook_status_message` 字段：通过 `TERM_PROGRAM` 环境变量检测是否运行在 Kiro 中，若检测到则报告钩子是否已就位；若未检测到已知的自动钩子环境，则提醒用户改用通用记录工具手动归档。
 - 新增仓库根目录首次启动 `AGENTS.md`：在支持项目规则与本地命令的 AI IDE 中，用户只需发送完整的“初始化”或“初始化启动器”，IDE 即自动运行一键启动脚本。
 - Python 与 PowerShell 初始化器可识别带专用标记的官方首次启动入口，并在初始化时替换为完整项目规则；其他已有 `AGENTS.md` 仍按冲突保护策略拒绝覆盖。
 - 新增根目录 `start.ps1` 与 `start.py`：空项目目录克隆仓库后可用单个命令完成首次初始化、重复无损修复和完整性检查，无需先安装全局函数。

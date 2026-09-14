@@ -47,6 +47,20 @@ if (-not $check.ok) {
     exit 1
 }
 
+$isKiroIde = $env:TERM_PROGRAM -eq 'kiro'
+$kiroHookPath = Join-Path $projectRoot '.kiro\hooks\archive-conversation.kiro.hook'
+$kiroHookReady = $isKiroIde -and (Test-Path -LiteralPath $kiroHookPath)
+
+$hookStatusMessage = if ($isKiroIde -and $kiroHookReady) {
+    '检测到 Kiro 环境：.kiro/hooks/archive-conversation.kiro.hook 已生成并默认启用，每轮对话结束会自动归档，无需额外信任步骤。'
+}
+elseif ($isKiroIde) {
+    '检测到 Kiro 环境，但未能确认 .kiro/hooks/archive-conversation.kiro.hook 已生成；请运行 repair 后重试，或改用 tools/record-conversation.ps1 手动归档。'
+}
+else {
+    '未检测到已知的自动钩子环境（当前 TERM_PROGRAM 非 kiro）。Codex 用户可信任 .codex/hooks.json 后自动归档；其他 IDE 请在每轮结束后手动运行 tools/record-conversation.ps1 或 tools/record_conversation.py。'
+}
+
 [ordered]@{
     action = 'start'
     ok = $true
@@ -56,5 +70,8 @@ if (-not $check.ok) {
     ai_entry = (Join-Path $projectRoot 'START_HERE.md')
     hook_config = (Join-Path $projectRoot '.codex\hooks.json')
     hook_trust_required = $true
+    detected_ide = if ($isKiroIde) { 'kiro' } else { 'unknown' }
+    kiro_hook_active = $kiroHookReady
+    hook_status_message = $hookStatusMessage
     message = '启动完成。AI 只需先读取项目根目录 START_HERE.md；无需逐个分析 AI_PROJECT_BOOTSTRAP 源码。Codex 自动对话归档仍需用户审核并信任 .codex/hooks.json，然后在新会话中生效。'
 } | ConvertTo-Json -Depth 20
